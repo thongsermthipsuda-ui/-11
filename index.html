@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ห้องทดลองพีระมิด 3D | คณิตศาสตร์ ม.3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Prompt:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+--ink:#14264a;--muted:#5d6f8f;--blue:#4a6cf7;--indigo:#6c5ce7;--cyan:#16b8cc;--gold:#ffb547;--orange:#ff8a1f;--pink:#f5628c;--green:#18a77f;
+--glass:rgba(255,255,255,.64);--glass-strong:rgba(255,255,255,.86);--stroke:rgba(255,255,255,.75);--line:rgba(110,135,190,.24);
+--shadow:0 22px 55px rgba(40,60,130,.16);--radius:26px
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:'Noto Sans Thai',Tahoma,sans-serif;color:var(--ink);line-height:1.55;overflow:hidden;
+background:radial-gradient(1100px 700px at 8% -10%,#dbe6ff,transparent 60%),radial-gradient(900px 600px at 100% 0,#eadcff,transparent 55%),radial-gradient(900px 700px at 60% 115%,#d3f5f5,transparent 60%),#eef3ff}
+h1,h2,h3{font-family:'Prompt','Noto Sans Thai',Tahoma,sans-serif;margin:0}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 450px;gap:16px;height:100vh;padding:16px}
+.stage{position:relative;border-radius:var(--radius);overflow:hidden;min-height:0;border:1px solid var(--stroke);box-shadow:var(--shadow);background:linear-gradient(165deg,#f8fbff 0%,#e6eeff 55%,#dcf0ff 100%)}
+#viewport{position:absolute;inset:0}
+#viewport canvas{display:block;width:100%;height:100%;outline:none;touch-action:none;cursor:grab}
+#viewport canvas:active{cursor:grabbing}
+#hotspots{position:absolute;inset:0;pointer-events:none;transition:opacity .35s}
+.hotspot{position:absolute;left:0;top:0;display:flex;align-items:center;gap:8px;border:0;background:none;padding:0;cursor:pointer;pointer-events:auto;font-family:inherit;will-change:transform}
+.hotspot .dot{position:relative;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--indigo));color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center;border:3px solid #fff;box-shadow:0 6px 16px rgba(60,80,200,.4);transition:transform .2s,background .2s}
+.hotspot .dot::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid rgba(74,108,247,.55);animation:ping 1.9s ease-out infinite}
+.hotspot .tag{background:var(--glass-strong);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--stroke);padding:3px 11px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 6px 16px rgba(40,60,130,.12);transition:transform .2s,background .2s}
+.hotspot:hover .dot{transform:scale(1.18)}
+.hotspot:hover .tag{transform:translateX(2px)}
+.hotspot.active .dot{background:linear-gradient(135deg,var(--gold),var(--orange))}
+.hotspot.active .dot::after{border-color:rgba(255,138,31,.7)}
+.hotspot.active .tag{background:#fff3e0}
+@keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+.chip-title{position:absolute;left:18px;top:16px;display:flex;align-items:center;gap:10px;padding:9px 16px 9px 12px;border-radius:999px;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--stroke);box-shadow:0 10px 26px rgba(40,60,130,.12);font-size:13px;color:var(--muted)}
+.chip-title b{color:var(--ink);font-family:'Prompt',sans-serif;font-size:14px}
+.toolbar{position:absolute;right:16px;top:14px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:62%}
+.tbtn{border:1px solid var(--stroke);background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--ink);font:600 12.5px 'Noto Sans Thai',sans-serif;padding:8px 13px;border-radius:999px;cursor:pointer;box-shadow:0 8px 20px rgba(40,60,130,.1);transition:transform .15s,background .2s,color .2s}
+.tbtn:hover{transform:translateY(-2px)}
+.tbtn.on{background:linear-gradient(135deg,var(--blue),var(--indigo));color:#fff;border-color:transparent}
+.infocard{position:absolute;left:18px;bottom:18px;width:min(390px,calc(100% - 36px));padding:16px 18px 16px 22px;border-radius:22px;background:var(--glass-strong);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid var(--stroke);box-shadow:0 24px 55px rgba(30,50,120,.22);opacity:0;transform:translateY(24px) scale(.97);pointer-events:none;overflow:hidden}
+.infocard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,var(--blue),var(--cyan))}
+.infocard.show{animation:cardIn .5s cubic-bezier(.2,.9,.25,1.15) forwards;pointer-events:auto}
+@keyframes cardIn{0%{opacity:0;transform:translateY(26px) scale(.96)}100%{opacity:1;transform:none}}
+.infocard .kick{font-size:11.5px;letter-spacing:.06em;color:var(--indigo);font-weight:700}
+.infocard h3{font-size:1.1rem;margin:2px 0 6px}
+.infocard p{margin:0 0 10px;font-size:.92rem;color:#2c4068}
+.infocard .fx{background:linear-gradient(135deg,#eef3ff,#e5fafc);border:1px dashed rgba(74,108,247,.4);border-radius:12px;padding:9px 12px;font-weight:600;font-size:.92rem}
+.infocard .x{position:absolute;right:10px;top:8px;border:0;background:rgba(20,38,74,.07);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:15px;color:var(--ink)}
+.infocard .x:hover{background:rgba(20,38,74,.15)}
+.hint{position:absolute;right:18px;bottom:16px;font-size:12px;color:var(--muted);background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:6px 13px;border-radius:999px;border:1px solid var(--stroke)}
+#loader{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(165deg,#f8fbff,#e6eeff);z-index:5;transition:opacity .6s,visibility .6s}
+#loader.gone{opacity:0;visibility:hidden}
+#loader .box{text-align:center;color:var(--muted)}
+.spin{width:46px;height:46px;border-radius:50%;border:5px solid #d4def7;border-top-color:var(--blue);margin:0 auto 12px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.panel{display:flex;flex-direction:column;min-height:0;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid var(--stroke);box-shadow:var(--shadow);overflow:hidden}
+.phead{padding:20px 22px 12px;background:linear-gradient(120deg,rgba(35,62,135,.95),rgba(74,108,247,.92) 60%,rgba(22,184,204,.9));color:#fff}
+.phead .eyebrow{font-size:.78rem;letter-spacing:.1em;opacity:.85}
+.phead h1{font-size:1.55rem;margin:2px 0}
+.phead p{margin:2px 0 0;font-size:.88rem;color:#e6efff}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 12px 0}
+.tabbtn{border:1px solid transparent;background:transparent;border-radius:14px 14px 0 0;padding:9px 4px;font:600 12.5px 'Noto Sans Thai',sans-serif;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
+.tabbtn:hover{background:rgba(255,255,255,.55)}
+.tabbtn.active{background:var(--glass-strong);color:var(--ink);border-color:var(--line);border-bottom-color:transparent;box-shadow:0 -4px 14px rgba(40,60,130,.06)}
+.pbody{flex:1;min-height:0;overflow:auto;padding:14px;background:rgba(255,255,255,.35);border-top:1px solid var(--line)}
+.pane{display:none}
+.pane.active{display:block;animation:paneIn .45s ease}
+@keyframes paneIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.block{background:var(--glass-strong);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 8px 22px rgba(40,60,130,.06)}
+.block h2{font-size:1.05rem;margin-bottom:8px}
+.block h3{font-size:.98rem;margin-bottom:6px}
+.sub{color:var(--muted);font-size:.88rem;margin:0 0 8px}
+.note{color:var(--muted);font-size:.84rem;margin:8px 0 0}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#e9efff;padding:5px;border-radius:14px;margin-bottom:14px}
+.seg button{border:0;background:transparent;padding:9px 6px;border-radius:10px;font:600 13px 'Noto Sans Thai',sans-serif;color:var(--muted);cursor:pointer;transition:all .2s}
+.seg button.on{background:#fff;color:var(--blue);box-shadow:0 4px 12px rgba(60,80,200,.18)}
+.field{margin-bottom:14px}
+.field label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:.9rem;margin-bottom:8px}
+.field output{color:var(--blue);font-weight:700}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--cyan));outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:4px solid var(--blue);box-shadow:0 4px 12px rgba(60,80,200,.4)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:4px solid var(--blue);box-shadow:0 4px 12px rgba(60,80,200,.4)}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.metric{background:var(--glass-strong);border:1px solid var(--line);border-radius:16px;padding:10px 8px;text-align:center}
+.metric small{display:block;color:var(--muted);font-size:.75rem}
+.metric strong{font-family:'Prompt',sans-serif;font-size:1.25rem;color:var(--ink)}
+.metric .u{font-size:.7rem;color:var(--muted)}
+.formula{background:linear-gradient(135deg,#eef3ff,#e5fafc);border-left:5px solid var(--cyan);border-radius:14px;padding:12px 14px;font-size:.93rem}
+.formula strong{color:var(--indigo)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font:600 12.5px 'Noto Sans Thai',sans-serif;color:var(--ink);cursor:pointer;transition:all .2s}
+.chip:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-2px)}
+.chip.active{background:linear-gradient(135deg,var(--gold),var(--orange));color:#fff;border-color:transparent}
+#chart{width:100%;height:210px;display:block;border-radius:14px;background:#fbfcff}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 15px;border-radius:12px;font:600 13.5px 'Noto Sans Thai',sans-serif;cursor:pointer;transition:transform .15s,box-shadow .2s,opacity .2s}
+.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 18px rgba(40,60,130,.14)}
+.btn.primary{background:linear-gradient(135deg,var(--blue),var(--indigo));color:#fff;border-color:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.steps{display:flex;gap:10px;align-items:center;margin:10px 0}
+.step{flex:1;height:12px;border-radius:99px;background:#dde6fa;overflow:hidden;position:relative}
+.step i{position:absolute;inset:0;background:linear-gradient(90deg,var(--cyan),var(--blue));transform:scaleX(0);transform-origin:left;transition:transform .6s}
+.step.on i{transform:scaleX(1)}
+.status{font-size:.9rem;color:var(--muted);margin-top:6px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+fieldset.qitem{border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 10px;background:#fff;transition:border-color .3s,background .3s}
+fieldset.qitem legend{font-weight:700;font-size:.93rem;padding:0 6px}
+.opt{display:flex;gap:9px;align-items:flex-start;padding:7px 8px;border-radius:10px;cursor:pointer;font-size:.92rem;transition:background .2s}
+.opt:hover{background:#eef3ff}
+.opt input{margin-top:5px;accent-color:var(--blue)}
+fieldset.right{border-color:#5cc9a4;background:#f0fbf6}
+fieldset.wrong{border-color:#f08aa0;background:#fff4f6}
+.qexp{display:none;font-size:.87rem;margin-top:6px;padding:8px 10px;border-radius:10px}
+fieldset.right .qexp{display:block;background:#dff6ec;color:#116a4f}
+fieldset.wrong .qexp{display:block;background:#ffe4ea;color:#9d3149}
+.qactions{display:flex;gap:8px;margin-top:6px}
+.result{margin-top:12px;padding:0;border-radius:14px;font-weight:600}
+.result.show{padding:14px;background:linear-gradient(135deg,#eef3ff,#e5fafc);animation:paneIn .4s}
+.video-wrap{position:relative;background:#101a2b;border-radius:16px;overflow:hidden;aspect-ratio:4/3;width:100%}
+.video-wrap video,.video-wrap canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.video-wrap video{transform:scaleX(-1)}
+.camera-placeholder{position:absolute;inset:0;display:grid;place-items:center;color:#d7e4ff;text-align:center;padding:20px}
+.camera-placeholder.hidden{display:none}
+.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:center}
+th{background:#eef3ff;font-weight:700}
+.tablewrap{max-height:170px;overflow:auto;border-radius:12px;border:1px solid var(--line)}
+.foot{text-align:center;color:var(--muted);font-size:.78rem;padding:4px 0 2px}
+@media(max-width:980px){
+body{overflow:auto}
+.app{grid-template-columns:1fr;height:auto;padding:12px}
+.stage{height:62vh;min-height:380px}
+.panel{min-height:70vh}
+.pbody{overflow:visible}
+.toolbar{max-width:68%}
+.hint{display:none}
+}
+@media(max-width:560px){
+.chip-title span.s{display:none}
+.toolbar{top:62px;max-width:calc(100% - 24px);left:12px;right:auto;justify-content:flex-start}
+.tabs{grid-template-columns:repeat(2,1fr)}
+.metrics{grid-template-columns:repeat(2,1fr)}
+}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<section class="stage" id="stage">
+<div id="viewport"></div>
+<div id="hotspots"></div>
+<div class="chip-title"><span>🔺</span><div><b>ห้องทดลองพีระมิด 3D</b> <span class="s">• คลิกจุดเลขเพื่อดูคำอธิบาย</span></div></div>
+<div class="toolbar">
+<button class="tbtn on" id="btnRotate" type="button">🔄 หมุนอัตโนมัติ</button>
+<button class="tbtn" id="btnGlass" type="button">🧊 โปร่งแสง</button>
+<button class="tbtn on" id="btnGuides" type="button">📏 เส้นช่วย</button>
+<button class="tbtn" id="btnReset" type="button">🎯 รีเซ็ตมุมมอง</button>
+</div>
+<div class="infocard" id="infoCard" role="dialog" aria-live="polite">
+<button class="x" id="cardClose" type="button" aria-label="ปิด">✕</button>
+<div class="kick" id="cardKick"></div>
+<h3 id="cardTitle"></h3>
+<p id="cardBody"></p>
+<div class="fx" id="cardFx"></div>
+</div>
+<div class="hint">ลาก = หมุน • คลิกขวาลาก = แพน • ล้อเมาส์ = ซูม</div>
+<div id="loader"><div class="box"><div class="spin"></div><div id="loaderText">กำลังโหลดฉาก 3D…</div></div></div>
+</section>
+
+<aside class="panel">
+<div class="phead">
+<div class="eyebrow">ห้องเรียนคณิตศาสตร์ • มัธยมศึกษาปีที่ 3</div>
+<h1>🔺 ห้องทดลองพีระมิด</h1>
+<p>ปรับรูปทรง หมุนดูรอบด้าน แล้วค้นพบสูตรปริมาตรด้วยตัวเอง</p>
+</div>
+<nav class="tabs" role="tablist">
+<button class="tabbtn active" data-tab="lab" type="button">🧪 สำรวจ</button>
+<button class="tabbtn" data-tab="vol" type="button">🫗 ปริมาตร ⅓</button>
+<button class="tabbtn" data-tab="quiz" type="button">📝 เช็กความเข้าใจ</button>
+<button class="tabbtn" data-tab="game" type="button">🙌 เกมมือ</button>
+</nav>
+<div class="pbody">
+
+<section class="pane active" id="pane-lab">
+<div class="block">
+<h2>⚙️ ปรับตัวแปร</h2>
+<div class="seg" id="kindSeg"><button class="on" data-kind="square" type="button">ฐานสี่เหลี่ยมจัตุรัส</button><button data-kind="triangle" type="button">ฐานสามเหลี่ยม</button></div>
+<div class="field"><label for="base">ความยาวด้านฐาน (b) <span><output id="baseOut">6</output> หน่วย</span></label><input id="base" type="range" min="2" max="10" step=".5" value="6"></div>
+<div class="field" style="margin-bottom:4px"><label for="height">ความสูงตั้งฉาก (h) <span><output id="heightOut">8</output> หน่วย</span></label><input id="height" type="range" min="2" max="12" step=".5" value="8"></div>
+</div>
+<div class="metrics">
+<div class="metric"><small>พื้นที่ฐาน</small><strong id="mArea">36</strong><div class="u">ตร.หน่วย</div></div>
+<div class="metric"><small>ปริมาตร</small><strong id="mVol">96</strong><div class="u">ลบ.หน่วย</div></div>
+<div class="metric"><small>ความสูงเอียง</small><strong id="mSlant">8.54</strong><div class="u">หน่วย</div></div>
+<div class="metric"><small>หน้า</small><strong id="mFaces">5</strong><div class="u">หน้า</div></div>
+<div class="metric"><small>ขอบ</small><strong id="mEdges">8</strong><div class="u">เส้น</div></div>
+<div class="metric"><small>จุดยอดมุม</small><strong id="mVerts">5</strong><div class="u">จุด</div></div>
+</div>
+<div class="block">
+<div class="formula"><strong>สูตรปริมาตรพีระมิด:</strong> V = ⅓ × พื้นที่ฐาน × ความสูง<br><span id="relation"></span></div>
+<p class="note" id="shapeNote"></p>
+</div>
+<div class="block">
+<h3>📍 จุดสำคัญบนพีระมิด</h3>
+<p class="sub">คลิกชิปด้านล่าง หรือคลิกจุดเลขบนโมเดล 3D</p>
+<div class="chips" id="chips"></div>
+</div>
+<div class="block">
+<h3>📈 กราฟ: ความสูงกับปริมาตร</h3>
+<p class="sub">ฐานคงเดิม แล้วเปลี่ยนความสูง</p>
+<canvas id="chart"></canvas>
+<p class="note">เมื่อพื้นที่ฐานคงที่ ถ้าความสูงเพิ่มเป็น 2 เท่า ปริมาตรก็เพิ่มเป็น 2 เท่า (กราฟเป็นเส้นตรงผ่านจุดกำเนิด)</p>
+</div>
+</section>
+
+<section class="pane" id="pane-vol">
+<div class="block">
+<h2>🫗 ทำไมต้องคูณ ⅓ ?</h2>
+<p class="sub">ปริซึมที่มีฐานเท่ากันและสูงเท่ากับพีระมิด จุปริมาตรได้เป็น 3 เท่าของพีระมิด ลองเทของเหลวจากพีระมิดลงในปริซึมดู</p>
+<div class="steps"><div class="step" id="st0"><i></i></div><div class="step" id="st1"><i></i></div><div class="step" id="st2"><i></i></div></div>
+<div class="btnrow"><button class="btn primary" id="pourBtn" type="button">🫗 เทจากพีระมิด</button><button class="btn" id="pourReset" type="button">↺ เริ่มใหม่</button></div>
+<div class="status" id="pourStatus" aria-live="polite"></div>
+</div>
+<div class="block">
+<h3>📊 เปรียบเทียบปริมาตร</h3>
+<div class="cmp">
+<div class="metric"><small>ปริซึม = A × h</small><strong id="prismV">288</strong><div class="u">ลบ.หน่วย</div></div>
+<div class="metric"><small>พีระมิด = ⅓ × A × h</small><strong id="pyrV">96</strong><div class="u">ลบ.หน่วย</div></div>
+</div>
+<div class="formula" style="margin-top:10px">A = <span id="volA">36</span> ตร.หน่วย, h = <span id="volH">8</span> หน่วย<br>ปริมาตรพีระมิด : ปริมาตรปริซึม = <strong>1 : 3</strong></div>
+<p class="note">กลับไปแท็บ “สำรวจ” เพื่อเปลี่ยนค่า b และ h แล้วกลับมาทดลองอีกครั้ง อัตราส่วน 1 : 3 จะคงเดิมเสมอ</p>
+</div>
+</section>
+
+<section class="pane" id="pane-quiz">
+<div class="block">
+<h2>📝 เช็กความเข้าใจ 5 ข้อ</h2>
+<p class="sub">เลือกคำตอบที่ถูกต้อง แล้วกดตรวจคำตอบ</p>
+<form id="quizForm"></form>
+</div>
+</section>
+
+<section class="pane" id="pane-game">
+<div class="block">
+<h2>🙌 เกมมือจับตัวเลข</h2>
+<p class="sub">ใช้มือจับวงกลมตัวเลขที่ตรงกับโจทย์ โดยจีบนิ้วโป้งกับนิ้วชี้เพื่อ “จับ” ตัวเลขผ่านกล้อง ได้ 1 คะแนนต่อการจับถูก 1 ครั้ง เล่นให้ได้มากที่สุดใน 20 วินาที</p>
+<div class="video-wrap"><video id="video" playsinline muted></video><canvas id="poseCanvas"></canvas><div id="cameraPlaceholder" class="camera-placeholder">📷<br>ภาพจากกล้องจะแสดงตรงนี้</div></div>
+<div class="btnrow"><button class="btn primary" id="cameraBtn" type="button">เปิดกล้อง</button><button class="btn primary" id="roundBtn" type="button" disabled>เริ่มเกม 20 วินาที</button><button class="btn" id="stopBtn" type="button" disabled>หยุดกล้อง</button></div>
+<div class="status" id="gameStatus" aria-live="polite">สถานะ: ยังไม่ได้เปิดกล้อง</div>
+<div class="statrow"><div class="metric"><small>จับถูกในรอบนี้</small><strong id="liveCount">0</strong></div><div class="metric"><small>เวลาที่เหลือ</small><strong id="timeLeft">20</strong></div><div class="metric"><small>รอบที่บันทึก</small><strong id="roundCount">0</strong></div></div>
+<p class="note">กล้องทำงานบนอุปกรณ์ของคุณ ข้อมูลเก็บไว้ในหน้านี้เท่านั้น การตรวจจับมือใช้ MediaPipe ต้องใช้อินเทอร์เน็ตเพื่อโหลดระบบครั้งแรก และต้องเปิดผ่าน HTTPS หรือ localhost เพื่อใช้กล้อง</p>
+</div>
+<div class="block">
+<h3>📊 ตารางผลการทดลอง</h3>
+<p class="sub">หนึ่งแถวคือข้อมูลจากการทดลองหนึ่งรอบ</p>
+<div class="tablewrap"><table><thead><tr><th>รอบ</th><th>คะแนน</th><th>เวลา (วินาที)</th></tr></thead><tbody id="roundRows"><tr><td colspan="3">ยังไม่มีข้อมูล — เริ่มเล่นเพื่อเก็บข้อมูล</td></tr></tbody></table></div>
+<div class="btnrow"><button class="btn" id="demoBtn" type="button">ดูตัวอย่างข้อมูล</button><button class="btn" id="clearBtn" type="button">ล้างข้อมูล</button><button class="btn" id="csvBtn" type="button">ดาวน์โหลด CSV</button></div>
+<div class="metrics" style="margin-bottom:10px"><div class="metric"><small>ค่าเฉลี่ย</small><strong id="mean">—</strong></div><div class="metric"><small>มัธยฐาน</small><strong id="median">—</strong></div><div class="metric"><small>พิสัย</small><strong id="range">—</strong></div></div>
+<div class="formula" id="statsExplain">เมื่อมีข้อมูลแล้ว ระบบจะคำนวณค่าเฉลี่ย มัธยฐาน และพิสัยให้โดยอัตโนมัติ</div>
+<p class="note">ข้อควรระวัง: แสงน้อยหรือมืออยู่นอกกรอบอาจทำให้นับคลาดเคลื่อน ลองเล่นหลายรอบแล้วตรวจข้อมูลก่อนสรุป</p>
+</div>
+</section>
+
+<div class="foot">สื่อการเรียนรู้แบบโต้ตอบ 3D • คณิตศาสตร์ ม.3</div>
+</div>
+</aside>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+<script>
+setTimeout(function(){if(!window.__ready){var t=document.getElementById('loaderText');if(t){t.textContent='โหลด Three.js ไม่สำเร็จ โปรดตรวจอินเทอร์เน็ต หรือเบราว์เซอร์ไม่รองรับ WebGL แล้วรีเฟรชหน้านี้';}var s=document.querySelector('#loader .spin');if(s){s.style.display='none';}}},9000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $=id=>document.getElementById(id);
+const fmt=x=>String(parseFloat(Number(x).toFixed(2)));
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+
+const state={kind:'square',b:6,H:8,bCur:6,HCur:8,tab:'lab',glass:false,guides:true,volMix:0,shellOp:1,activeHot:null};
+const pour={k:0,phase:'idle',r:1,liquidCur:0,liquidTarget:0};
+
+function calc(kind,b,H){
+ const n=kind==='square'?4:3;
+ const R=b/(2*Math.sin(Math.PI/n));
+ const ap=R*Math.cos(Math.PI/n);
+ const A=kind==='square'?b*b:Math.sqrt(3)/4*b*b;
+ return {n,R,ap,A,V:A*H/3,l:Math.sqrt(H*H+ap*ap),b,H,kind};
+}
+function polyVerts(kind){
+ const n=kind==='square'?4:3,off=Math.PI/n,v=[];
+ for(let i=0;i<n;i++){const a=2*Math.PI*i/n+off;v.push(new THREE.Vector3(Math.sin(a),0,Math.cos(a)));}
+ return v;
+}
+function buildPyramidGeo(kind){
+ const v=polyVerts(kind),n=v.length,pos=[];
+ for(let i=0;i<n;i++){const a=v[i],b=v[(i+1)%n];pos.push(0,1,0,a.x,0,a.z,b.x,0,b.z);}
+ for(let i=0;i<n;i++){const a=v[i],b=v[(i+1)%n];pos.push(0,0,0,b.x,0,b.z,a.x,0,a.z);}
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ g.addGroup(0,n*3,0);
+ g.addGroup(n*3,n*3,1);
+ g.computeVertexNormals();
+ return g;
+}
+function buildPrismGeo(kind){
+ const v=polyVerts(kind),n=v.length,pos=[];
+ for(let i=0;i<n;i++){const a=v[i],b=v[(i+1)%n];pos.push(a.x,0,a.z,b.x,0,b.z,b.x,1,b.z,a.x,0,a.z,b.x,1,b.z,a.x,1,a.z);}
+ for(let i=0;i<n;i++){const a=v[i],b=v[(i+1)%n];pos.push(0,1,0,a.x,1,a.z,b.x,1,b.z);}
+ for(let i=0;i<n;i++){const a=v[i],b=v[(i+1)%n];pos.push(0,0,0,b.x,0,b.z,a.x,0,a.z);}
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ g.computeVertexNormals();
+ return g;
+}
+function buildPolyGeo(kind){
+ const v=polyVerts(kind),n=v.length,pos=[];
+ for(let i=0;i<n;i++){const a=v[i],b=v[(i+1)%n];pos.push(0,0,0,a.x,0,a.z,b.x,0,b.z);}
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ g.computeVertexNormals();
+ return g;
+}
+
+const viewport=$('viewport');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+renderer.localClippingEnabled=true;
+renderer.setClearColor(0x000000,0);
+viewport.appendChild(renderer.domElement);
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(42,1,.1,300);
+camera.position.set(12,9,14);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;
+controls.dampingFactor=.07;
+controls.minDistance=5;
+controls.maxDistance=55;
+controls.maxPolarAngle=Math.PI*.495;
+controls.autoRotate=true;
+controls.autoRotateSpeed=1.1;
+controls.target.set(0,3.4,0);
+controls.screenSpacePanning=true;
+controls.update();
+
+const hemi=new THREE.HemisphereLight(0xffffff,0x93a8dc,.95);
+scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,2.1);
+sun.position.set(7,14,9);
+sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.near=1;
+sun.shadow.camera.far=50;
+sun.shadow.camera.left=-16;
+sun.shadow.camera.right=16;
+sun.shadow.camera.top=16;
+sun.shadow.camera.bottom=-16;
+sun.shadow.bias=-.0004;
+sun.shadow.normalBias=.03;
+sun.shadow.radius=4;
+scene.add(sun);
+const rim=new THREE.PointLight(0x5fe0ee,70,60);
+rim.position.set(-9,6,-8);
+scene.add(rim);
+const warm=new THREE.PointLight(0xffc47a,45,50);
+warm.position.set(9,3,-7);
+scene.add(warm);
+
+function floorTexture(){
+ const c=document.createElement('canvas');c.width=c.height=512;
+ const x=c.getContext('2d');
+ const g=x.createRadialGradient(256,256,10,256,256,256);
+ g.addColorStop(0,'rgba(255,255,255,.95)');
+ g.addColorStop(.55,'rgba(226,236,255,.75)');
+ g.addColorStop(1,'rgba(210,225,255,0)');
+ x.fillStyle=g;x.fillRect(0,0,512,512);
+ const t=new THREE.CanvasTexture(c);
+ t.colorSpace=THREE.SRGBColorSpace;
+ return t;
+}
+const floor=new THREE.Mesh(new THREE.CircleGeometry(34,64),new THREE.MeshBasicMaterial({map:floorTexture(),transparent:true,depthWrite:false}));
+floor.rotation.x=-Math.PI/2;
+floor.position.y=-.02;
+scene.add(floor);
+const shadowPlane=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:.24}));
+shadowPlane.rotation.x=-Math.PI/2;
+shadowPlane.position.y=.002;
+shadowPlane.receiveShadow=true;
+scene.add(shadowPlane);
+const grid=new THREE.GridHelper(40,40,0x9db2e8,0xc3d1f3);
+grid.material.transparent=true;
+grid.material.opacity=.45;
+grid.material.depthWrite=false;
+grid.position.y=.004;
+scene.add(grid);
+
+const pyramidGroup=new THREE.Group();
+const prismGroup=new THREE.Group();
+scene.add(pyramidGroup);
+scene.add(prismGroup);
+
+const sideMat=new THREE.MeshPhysicalMaterial({color:0x5a7bff,roughness:.32,metalness:.04,clearcoat:.7,clearcoatRoughness:.25,flatShading:true,transparent:true});
+const baseMat=new THREE.MeshPhysicalMaterial({color:0xffc15e,roughness:.45,transparent:true});
+const pyr=new THREE.Mesh(buildPyramidGeo('square'),[sideMat,baseMat]);
+pyr.castShadow=true;
+pyramidGroup.add(pyr);
+
+const clipPlane=new THREE.Plane(new THREE.Vector3(0,-1,0),8);
+const fillMat=new THREE.MeshStandardMaterial({color:0x22d3ee,roughness:.2,emissive:0x0a5a66,emissiveIntensity:.35,transparent:true,opacity:.93,side:THREE.DoubleSide,clippingPlanes:[clipPlane]});
+const fill=new THREE.Mesh(pyr.geometry,fillMat);
+pyramidGroup.add(fill);
+const capMat=new THREE.MeshStandardMaterial({color:0x7fe9f5,roughness:.15,emissive:0x0a5a66,emissiveIntensity:.3,transparent:true,opacity:.95,side:THREE.DoubleSide});
+const cap=new THREE.Mesh(buildPolyGeo('square'),capMat);
+pyramidGroup.add(cap);
+
+const edgeMat=new THREE.MeshStandardMaterial({color:0x1f3170,roughness:.4,metalness:.1});
+const unitCyl=new THREE.CylinderGeometry(1,1,1,14);
+const unitSph=new THREE.SphereGeometry(1,18,14);
+const edgeMeshes=[],jointMeshes=[];
+for(let i=0;i<8;i++){const m=new THREE.Mesh(unitCyl,edgeMat);m.castShadow=true;pyramidGroup.add(m);edgeMeshes.push(m);}
+for(let i=0;i<5;i++){const m=new THREE.Mesh(unitSph,edgeMat);pyramidGroup.add(m);jointMeshes.push(m);}
+
+const guides=new THREE.Group();
+pyramidGroup.add(guides);
+const guideMat=c=>new THREE.MeshBasicMaterial({color:c,depthTest:false,transparent:true,opacity:.96});
+const gH=new THREE.Mesh(unitCyl,guideMat(0xff8a1f));
+const gA=new THREE.Mesh(unitCyl,guideMat(0x14b8c8));
+const gL=new THREE.Mesh(unitCyl,guideMat(0xf5628c));
+const gDot=new THREE.Mesh(unitSph,guideMat(0xff8a1f));
+[gH,gA,gL,gDot].forEach(m=>{m.renderOrder=20;guides.add(m);});
+const markGeo=new THREE.BufferGeometry();
+markGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(9),3));
+const mark=new THREE.Line(markGeo,new THREE.LineBasicMaterial({color:0xff8a1f,depthTest:false}));
+mark.renderOrder=21;
+mark.frustumCulled=false;
+guides.add(mark);
+
+const prismScale=new THREE.Group();
+prismGroup.add(prismScale);
+const glassMat=new THREE.MeshPhysicalMaterial({color:0xbfd4ff,roughness:.05,metalness:0,transparent:true,opacity:.17,side:THREE.DoubleSide,depthWrite:false});
+const prismMesh=new THREE.Mesh(buildPrismGeo('square'),glassMat);
+prismScale.add(prismMesh);
+const prismLines=new THREE.LineSegments(new THREE.EdgesGeometry(prismMesh.geometry),new THREE.LineBasicMaterial({color:0x5a74c8}));
+prismScale.add(prismLines);
+const liquidMat=new THREE.MeshPhysicalMaterial({color:0x22d3ee,roughness:.12,emissive:0x0a5a66,emissiveIntensity:.25,transparent:true,opacity:.82});
+const liquid=new THREE.Mesh(prismMesh.geometry,liquidMat);
+liquid.position.y=.01;
+prismGroup.add(liquid);
+
+function setKind(kind){
+ state.kind=kind;
+ const oldP=pyr.geometry,oldPr=prismMesh.geometry,oldE=prismLines.geometry,oldC=cap.geometry;
+ pyr.geometry=buildPyramidGeo(kind);
+ fill.geometry=pyr.geometry;
+ prismMesh.geometry=buildPrismGeo(kind);
+ liquid.geometry=prismMesh.geometry;
+ prismLines.geometry=new THREE.EdgesGeometry(prismMesh.geometry);
+ cap.geometry=buildPolyGeo(kind);
+ oldP.dispose();oldPr.dispose();oldE.dispose();oldC.dispose();
+}
+
+const _d=new THREE.Vector3(),_up=new THREE.Vector3(0,1,0),_o=new THREE.Vector3(0,0,0),_apex=new THREE.Vector3(),_mid=new THREE.Vector3(),_hv=new THREE.Vector3();
+function setCyl(m,a,b,r){
+ _d.subVectors(b,a);
+ const L=_d.length();
+ m.position.copy(a).addScaledVector(_d,.5);
+ m.scale.set(r,Math.max(L,1e-4),r);
+ if(L>1e-4)m.quaternion.setFromUnitVectors(_up,_d.normalize());
+ m.visible=L>1e-4;
+}
+const SC={c:calc('square',6,8),vs:[],apex:new THREE.Vector3(),mid0:new THREE.Vector3(),mid1:new THREE.Vector3()};
+
+function applyShape(){
+ const c=calc(state.kind,state.bCur,state.HCur),n=c.n,R=c.R,ap=c.ap,H=c.H;
+ pyr.scale.set(R,H,R);
+ fill.scale.set(R*.985,H*.985,R*.985);
+ prismScale.scale.set(R,H,R);
+ const vs=polyVerts(state.kind).map(v=>v.multiplyScalar(R));
+ _apex.set(0,H,0);
+ for(let i=0;i<8;i++){
+  const m=edgeMeshes[i];
+  if(i<n)setCyl(m,_apex,vs[i],.045);
+  else if(i<2*n)setCyl(m,vs[i-n],vs[(i-n+1)%n],.045);
+  else m.visible=false;
+ }
+ for(let i=0;i<5;i++){
+  const m=jointMeshes[i];
+  if(i<n){m.position.copy(vs[i]);m.scale.setScalar(.085);m.visible=true;}
+  else if(i===n){m.position.copy(_apex);m.scale.setScalar(.1);m.visible=true;}
+  else m.visible=false;
+ }
+ _mid.copy(vs[0]).add(vs[1]).multiplyScalar(.5);
+ setCyl(gH,_o,_apex,.05);
+ setCyl(gA,_o,_mid,.04);
+ setCyl(gL,_apex,_mid,.04);
+ gDot.position.copy(_o);
+ gDot.scale.setScalar(.09);
+ const dx=_mid.x/ap,dz=_mid.z/ap,s=Math.min(.5,H*.18,ap*.5);
+ const p=markGeo.attributes.position;
+ p.setXYZ(0,dx*s,0,dz*s);
+ p.setXYZ(1,dx*s,s,dz*s);
+ p.setXYZ(2,0,s,0);
+ p.needsUpdate=true;
+ SC.c=c;SC.vs=vs;SC.apex.copy(_apex);SC.mid0.copy(_mid);SC.mid1.copy(vs[1]).add(vs[2]).multiplyScalar(.5);
+ const mix=state.volMix,off=R+1.6;
+ pyramidGroup.position.x=-off*mix;
+ prismGroup.position.x=off*mix;
+ prismGroup.visible=mix>.02;
+ const sc=Math.max(.001,mix);
+ prismGroup.scale.setScalar(sc);
+ prismGroup.position.x=off*mix;
+ guides.visible=state.guides&&mix<.5;
+ const sClip=1-Math.pow(1-clamp(pour.r,0,1),1/3);
+ const yClip=sClip*H;
+ clipPlane.constant=yClip;
+ fill.visible=mix>.05;
+ cap.visible=mix>.05&&sClip>.002&&sClip<.995;
+ cap.position.y=yClip*.985;
+ const cs=R*.985*(1-sClip);
+ cap.scale.set(cs,1,cs);
+ const frac=clamp(pour.liquidCur,0,1);
+ liquid.visible=mix>.02&&frac>.002;
+ liquid.scale.set(R*.97,Math.max(1e-4,H*frac),R*.97);
+ const target=mix>.5?.26:(state.glass?.34:1);
+ state.shellOp+=(target-state.shellOp)*.14;
+ const op=state.shellOp;
+ sideMat.opacity=op;
+ baseMat.opacity=Math.min(1,op+.12);
+ const solid=op>.92;
+ sideMat.depthWrite=solid;
+ baseMat.depthWrite=solid;
+ sideMat.side=solid?THREE.FrontSide:THREE.DoubleSide;
+ baseMat.side=solid?THREE.FrontSide:THREE.DoubleSide;
+}
+
+const camGoal={pos:new THREE.Vector3(),target:new THREE.Vector3(0,3.4,0),usePos:false,until:0};
+const clock=new THREE.Clock();
+function frameCamera(vol){
+ const c=calc(state.kind,state.b,state.H);
+ const d=vol?Math.max(19,c.R*5+c.H*1.1+7):Math.max(13,c.R*2.2+c.H*1.25+7);
+ camGoal.pos.set(d*.58,d*.5+(vol?2:0),d*.8);
+ camGoal.target.set(0,c.H*(vol?.4:.42),0);
+ camGoal.usePos=true;
+ camGoal.until=clock.elapsedTime+1.5;
+}
+function nudgeTarget(){
+ camGoal.target.set(0,state.H*(state.tab==='vol'?.4:.42),0);
+ camGoal.usePos=false;
+ camGoal.until=clock.elapsedTime+.9;
+}
+controls.addEventListener('start',()=>{
+ camGoal.until=0;
+ if(controls.autoRotate){controls.autoRotate=false;$('btnRotate').classList.remove('on');}
+});
+
+function resize(){
+ const w=viewport.clientWidth,h=viewport.clientHeight;
+ if(!w||!h)return;
+ renderer.setSize(w,h,false);
+ camera.aspect=w/h;
+ camera.fov=w/h<1?58:42;
+ camera.updateProjectionMatrix();
+}
+new ResizeObserver(()=>{resize();drawChart();}).observe(viewport);
+window.addEventListener('resize',()=>{resize();drawChart();});
+
+const HOT=[
+{id:'apex',n:1,tag:'ยอด',pt:(s,o)=>o.copy(s.apex),title:'ยอดพีระมิด (Apex)',
+ body:c=>`จุดบนสุดที่หน้าข้างทุกหน้ามาบรรจบกัน พีระมิดนี้มีหน้าข้างเป็นรูปสามเหลี่ยม ${c.n} หน้า รวมกับฐานอีก 1 หน้า`,
+ formula:c=>`จำนวนหน้าทั้งหมด = ${c.n} + 1 = ${c.n+1} หน้า`},
+{id:'height',n:2,tag:'ความสูง h',pt:(s,o)=>o.set(0,s.c.H*.5,0),title:'ความสูงตั้งฉาก (h)',
+ body:c=>'ระยะตั้งฉากจากยอดลงมายังระนาบฐาน แสดงด้วยเส้นสีส้ม ใช้ในสูตรปริมาตร ไม่ใช่ความยาวเอียงของด้านข้าง',
+ formula:c=>`h = ${fmt(c.H)} หน่วย`},
+{id:'area',n:3,tag:'พื้นที่ฐาน A',pt:(s,o)=>o.copy(s.vs[2]).multiplyScalar(.5),title:'พื้นที่ฐาน (A)',
+ body:c=>c.kind==='square'?'ฐานเป็นสี่เหลี่ยมจัตุรัส พื้นที่เท่ากับความยาวด้านคูณความยาวด้าน':'ฐานเป็นสามเหลี่ยมด้านเท่า พื้นที่เท่ากับ √3 ⁄ 4 คูณกำลังสองของความยาวด้าน',
+ formula:c=>c.kind==='square'?`A = ${fmt(c.b)} × ${fmt(c.b)} = ${fmt(c.A)} ตารางหน่วย`:`A = (√3 ⁄ 4) × ${fmt(c.b)}² ≈ ${fmt(c.A)} ตารางหน่วย`},
+{id:'edge',n:4,tag:'ด้านฐาน b',pt:(s,o)=>o.copy(s.mid1),title:'ความยาวด้านฐาน (b)',
+ body:c=>`ความยาวของขอบแต่ละด้านของฐาน ลองลากแถบเลื่อน b แล้วดูว่าพื้นที่ฐานและปริมาตรเปลี่ยนเร็วแค่ไหน (พื้นที่ฐานแปรผันตามกำลังสองของ b)`,
+ formula:c=>`b = ${fmt(c.b)} หน่วย → A = ${fmt(c.A)} ตารางหน่วย`},
+{id:'slant',n:5,tag:'ความสูงเอียง l',pt:(s,o)=>o.copy(s.apex).add(s.mid0).multiplyScalar(.5),title:'ความสูงเอียง (l)',
+ body:c=>`ระยะจากยอดถึงกึ่งกลางด้านฐาน (เส้นสีชมพู) เป็นด้านตรงข้ามมุมฉากของสามเหลี่ยมมุมฉากที่มี h (สีส้ม) และ a (สีฟ้า) เป็นด้านประกอบมุมฉาก จึงใช้ทฤษฎีบทพีทาโกรัสได้ โดย a คือระยะจากจุดกึ่งกลางฐานถึงกึ่งกลางด้านฐาน`,
+ formula:c=>`a = ${fmt(c.ap)}, l = √(${fmt(c.H)}² + ${fmt(c.ap)}²) = ${fmt(c.l)} หน่วย`},
+{id:'vol',n:6,tag:'ปริมาตร V',pt:(s,o)=>o.set(0,s.c.H*.2,0),title:'ปริมาตรพีระมิด (V)',
+ body:c=>'ปริมาตรพีระมิดเท่ากับ ⅓ ของปริมาตรปริซึมที่มีฐานเท่ากันและสูงเท่ากัน ลองไปที่แท็บ “ปริมาตร ⅓” เพื่อดูการทดลองเทของเหลว',
+ formula:c=>`V = ⅓ × ${fmt(c.A)} × ${fmt(c.H)} = ${fmt(c.V)} ลูกบาศก์หน่วย`}
+];
+
+const hotLayer=$('hotspots'),chipBox=$('chips');
+HOT.forEach(h=>{
+ const b=document.createElement('button');
+ b.type='button';
+ b.className='hotspot';
+ b.innerHTML=`<span class="dot">${h.n}</span><span class="tag">${h.tag}</span>`;
+ b.addEventListener('click',()=>openCard(h.id));
+ hotLayer.appendChild(b);
+ h.el=b;
+ const ch=document.createElement('button');
+ ch.type='button';
+ ch.className='chip';
+ ch.textContent=`${h.n}. ${h.tag}`;
+ ch.addEventListener('click',()=>openCard(h.id));
+ chipBox.appendChild(ch);
+ h.chip=ch;
+});
+
+function renderCard(id,animate){
+ const h=HOT.find(x=>x.id===id);
+ if(!h)return;
+ const c=calc(state.kind,state.b,state.H);
+ $('cardKick').textContent=`จุดสำคัญ ${h.n} / ${HOT.length}`;
+ $('cardTitle').textContent=h.title;
+ $('cardBody').textContent=h.body(c);
+ $('cardFx').textContent=h.formula(c);
+ const card=$('infoCard');
+ if(animate){card.classList.remove('show');void card.offsetWidth;}
+ card.classList.add('show');
+}
+function openCard(id){
+ state.activeHot=id;
+ HOT.forEach(h=>{h.el.classList.toggle('active',h.id===id);h.chip.classList.toggle('active',h.id===id);});
+ renderCard(id,true);
+ const h=HOT.find(x=>x.id===id);
+ h.pt(SC,_hv);
+ pyramidGroup.localToWorld(_hv);
+ camGoal.target.set(_hv.x*.6,_hv.y*.75+state.H*.1,_hv.z*.6);
+ camGoal.usePos=false;
+ camGoal.until=clock.elapsedTime+1.2;
+}
+function closeCard(){
+ state.activeHot=null;
+ $('infoCard').classList.remove('show');
+ HOT.forEach(h=>{h.el.classList.remove('active');h.chip.classList.remove('active');});
+}
+$('cardClose').addEventListener('click',closeCard);
+
+function updateHotspots(){
+ const W=viewport.clientWidth,Hh=viewport.clientHeight,show=state.tab==='lab';
+ hotLayer.style.opacity=show?'1':'0';
+ if(!show)return;
+ HOT.forEach(h=>{
+  h.pt(SC,_hv);
+  pyramidGroup.localToWorld(_hv);
+  _hv.project(camera);
+  const x=(_hv.x*.5+.5)*W,y=(-_hv.y*.5+.5)*Hh;
+  h.el.style.transform=`translate(${x-13}px,${y-13}px)`;
+  h.el.style.visibility=_hv.z<1?'visible':'hidden';
+ });
+}
+
+function sizeCanvas(cv){
+ const r=cv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);
+ cv.width=Math.max(1,Math.floor(r.width*d));
+ cv.height=Math.max(1,Math.floor(r.height*d));
+ const x=cv.getContext('2d');
+ x.setTransform(d,0,0,d,0,0);
+ return {w:r.width,h:r.height,x};
+}
+function drawChart(){
+ const cv=$('chart');
+ if(!cv||!cv.offsetParent)return;
+ const {w,h,x}=sizeCanvas(cv);
+ x.clearRect(0,0,w,h);
+ const pad={l:46,r:14,t:16,b:36},pw=w-pad.l-pad.r,ph=h-pad.t-pad.b;
+ const c=calc(state.kind,state.b,state.H),maxH=12,maxV=c.A*maxH/3;
+ x.font='11px "Noto Sans Thai",Tahoma';
+ x.strokeStyle='#dce5f2';x.fillStyle='#61738b';x.lineWidth=1;
+ for(let i=0;i<=4;i++){
+  const y=pad.t+ph*i/4;
+  x.beginPath();x.moveTo(pad.l,y);x.lineTo(w-pad.r,y);x.stroke();
+  x.fillText((maxV*(1-i/4)).toFixed(0),6,y+4);
+ }
+ for(let i=0;i<=4;i++){
+  const xx=pad.l+pw*i/4;
+  x.fillText((maxH*i/4).toFixed(0),xx-4,h-18);
+ }
+ const grad=x.createLinearGradient(0,pad.t,0,pad.t+ph);
+ grad.addColorStop(0,'rgba(74,108,247,.28)');
+ grad.addColorStop(1,'rgba(74,108,247,0)');
+ x.beginPath();
+ x.moveTo(pad.l,pad.t+ph);
+ for(let i=0;i<=60;i++){const hv=maxH*i/60,v=c.A*hv/3;x.lineTo(pad.l+pw*hv/maxH,pad.t+ph*(1-v/maxV));}
+ x.lineTo(pad.l+pw,pad.t+ph);
+ x.closePath();
+ x.fillStyle=grad;x.fill();
+ x.beginPath();
+ for(let i=0;i<=60;i++){const hv=maxH*i/60,v=c.A*hv/3,xx=pad.l+pw*hv/maxH,yy=pad.t+ph*(1-v/maxV);if(i)x.lineTo(xx,yy);else x.moveTo(xx,yy);}
+ x.strokeStyle='#4a6cf7';x.lineWidth=3;x.stroke();
+ const px=pad.l+pw*c.H/maxH,py=pad.t+ph*(1-c.V/maxV);
+ x.setLineDash([4,4]);x.strokeStyle='#ff8a1f';x.lineWidth=1.5;
+ x.beginPath();x.moveTo(px,py);x.lineTo(px,pad.t+ph);x.moveTo(px,py);x.lineTo(pad.l,py);x.stroke();
+ x.setLineDash([]);
+ x.fillStyle='#f5628c';x.beginPath();x.arc(px,py,6,0,Math.PI*2);x.fill();
+ x.strokeStyle='#fff';x.lineWidth=2;x.stroke();
+ x.fillStyle='#14264a';x.font='bold 11px "Noto Sans Thai",Tahoma';
+ x.fillText('ความสูง h (หน่วย)',pad.l+pw/2-42,h-3);
+ x.fillText(`V = ${fmt(c.V)}`,clamp(px-26,pad.l,w-pad.r-62),Math.max(pad.t+10,py-10));
+}
+
+function updatePourUI(){
+ const k=pour.k;
+ for(let i=0;i<3;i++){$('st'+i).classList.toggle('on',i<k||(pour.phase==='drain'&&i===k&&pour.r<.5));}
+ $('pourBtn').disabled=pour.phase!=='idle'||k>=3;
+ let t;
+ if(pour.phase==='drain')t=`กำลังเทครั้งที่ ${k+1} … ระดับของเหลวในปริซึมกำลังสูงขึ้น`;
+ else if(pour.phase==='done')t='เทครบ 3 ครั้ง ปริซึมเต็มพอดี! แสดงว่า V ปริซึม = 3 × V พีระมิด หรือ V พีระมิด = ⅓ × A × h';
+ else if(k===0)t='กดปุ่มเพื่อเทของเหลวเต็มพีระมิดลงในปริซึมที่มีฐานเท่ากันและสูงเท่ากัน';
+ else t=`เทแล้ว ${k} ครั้ง ระดับของเหลวสูง ${k}⁄3 ของความสูงปริซึม`;
+ $('pourStatus').textContent=t;
+}
+function resetPour(){
+ pour.k=0;pour.phase='idle';pour.r=1;pour.liquidTarget=0;
+ updatePourUI();
+}
+$('pourBtn').addEventListener('click',()=>{
+ if(pour.phase!=='idle'||pour.k>=3)return;
+ pour.phase='drain';
+ pour.r=1;
+ updatePourUI();
+});
+$('pourReset').addEventListener('click',resetPour);
+function stepPour(dt){
+ if(pour.phase==='drain'){
+  pour.r=Math.max(0,pour.r-dt/1.7);
+  pour.liquidTarget=(pour.k+(1-pour.r))/3;
+  pour.liquidCur=pour.liquidTarget;
+  if(pour.r<=0){
+   pour.k++;
+   pour.liquidTarget=pour.k/3;
+   pour.liquidCur=pour.liquidTarget;
+   pour.phase=pour.k<3?'refill':'done';
+   updatePourUI();
+  }
+ }else if(pour.phase==='refill'){
+  pour.r=Math.min(1,pour.r+dt/.8);
+  if(pour.r>=1){pour.phase='idle';updatePourUI();}
+ }else{
+  pour.liquidCur+=(pour.liquidTarget-pour.liquidCur)*(1-Math.pow(.003,dt));
+ }
+}
+
+function updateReadouts(){
+ const c=calc(state.kind,state.b,state.H),n=c.n;
+ $('baseOut').textContent=fmt(c.b);
+ $('heightOut').textContent=fmt(c.H);
+ $('mArea').textContent=fmt(c.A);
+ $('mVol').textContent=fmt(c.V);
+ $('mSlant').textContent=fmt(c.l);
+ $('mFaces').textContent=n+1;
+ $('mEdges').textContent=2*n;
+ $('mVerts').textContent=n+1;
+ $('relation').innerHTML=`V = ⅓ × ${fmt(c.A)} × ${fmt(c.H)} = <strong>${fmt(c.V)}</strong> ลูกบาศก์หน่วย`;
+ $('shapeNote').textContent=state.kind==='square'?'ฐานเป็นสี่เหลี่ยมจัตุรัส มีหน้าข้างเป็นรูปสามเหลี่ยม 4 หน้า':'ฐานเป็นสามเหลี่ยมด้านเท่า มีหน้าข้างเป็นรูปสามเหลี่ยม 3 หน้า';
+ $('prismV').textContent=fmt(c.A*c.H);
+ $('pyrV').textContent=fmt(c.V);
+ $('volA').textContent=fmt(c.A);
+ $('volH').textContent=fmt(c.H);
+ drawChart();
+ if(state.activeHot)renderCard(state.activeHot,false);
+}
+
+document.querySelectorAll('#kindSeg button').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('#kindSeg button').forEach(x=>x.classList.toggle('on',x===b));
+ setKind(b.dataset.kind);
+ resetPour();
+ updateReadouts();
+ nudgeTarget();
+}));
+$('base').addEventListener('input',e=>{state.b=+e.target.value;updateReadouts();});
+$('height').addEventListener('input',e=>{state.H=+e.target.value;updateReadouts();nudgeTarget();});
+
+$('btnRotate').addEventListener('click',()=>{controls.autoRotate=!controls.autoRotate;$('btnRotate').classList.toggle('on',controls.autoRotate);});
+$('btnGlass').addEventListener('click',()=>{state.glass=!state.glass;$('btnGlass').classList.toggle('on',state.glass);});
+$('btnGuides').addEventListener('click',()=>{state.guides=!state.guides;$('btnGuides').classList.toggle('on',state.guides);});
+$('btnReset').addEventListener('click',()=>frameCamera(state.tab==='vol'));
+
+function setTab(t){
+ const prev=state.tab;
+ state.tab=t;
+ document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+ document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+t));
+ closeCard();
+ const toVol=t==='vol',fromVol=prev==='vol';
+ if(toVol&&!fromVol){frameCamera(true);resetPour();}
+ else if(!toVol&&fromVol){frameCamera(false);}
+ setTimeout(drawChart,30);
+}
+document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+
+const QUIZ=[
+{q:'สูตรหาปริมาตรพีระมิดคือข้อใด?',o:['พื้นที่ฐาน × ความสูง','⅓ × พื้นที่ฐาน × ความสูง','½ × พื้นที่ฐาน × ความสูง'],a:1,e:'ปริมาตรพีระมิดคือ ⅓ × พื้นที่ฐาน × ความสูง เพราะปริซึมฐานเดียวกันจุได้ 3 เท่าของพีระมิด'},
+{q:'ถ้าพื้นที่ฐานคงเดิม แล้วเพิ่มความสูงเป็น 2 เท่า ปริมาตรจะเป็นอย่างไร?',o:['เท่าเดิม','เพิ่มเป็น 4 เท่า','เพิ่มเป็น 2 เท่า'],a:2,e:'เมื่อพื้นที่ฐานคงเดิม ปริมาตรแปรผันตรงกับความสูง จึงเพิ่มเป็น 2 เท่า'},
+{q:'พีระมิดฐานสี่เหลี่ยมจัตุรัสมีหน้าข้างเป็นรูปสามเหลี่ยมกี่หน้า?',o:['3 หน้า','4 หน้า','5 หน้า'],a:1,e:'ฐานสี่เหลี่ยมจัตุรัสมี 4 ด้าน จึงมีหน้าข้างสามเหลี่ยม 4 หน้า'},
+{q:'พีระมิดฐานสี่เหลี่ยมจัตุรัสด้านยาว 6 หน่วย สูง 9 หน่วย มีปริมาตรเท่าใด?',o:['54 ลูกบาศก์หน่วย','108 ลูกบาศก์หน่วย','324 ลูกบาศก์หน่วย'],a:1,e:'พื้นที่ฐาน = 6 × 6 = 36 จึงได้ V = ⅓ × 36 × 9 = 108 ลูกบาศก์หน่วย'},
+{q:'ปริซึมและพีระมิดมีฐานเท่ากันและสูงเท่ากัน ถ้าปริซึมมีปริมาตร 150 ลูกบาศก์หน่วย พีระมิดมีปริมาตรเท่าใด?',o:['50 ลูกบาศก์หน่วย','75 ลูกบาศก์หน่วย','450 ลูกบาศก์หน่วย'],a:0,e:'ปริมาตรพีระมิดเป็น ⅓ ของปริซึม จึงเท่ากับ 150 ÷ 3 = 50 ลูกบาศก์หน่วย'}
+];
+const quizForm=$('quizForm');
+quizForm.innerHTML=QUIZ.map((it,i)=>`<fieldset class="qitem" data-i="${i}"><legend>ข้อ ${i+1}. ${it.q}</legend>${it.o.map((o,j)=>`<label class="opt"><input type="radio" name="q${i}" value="${j}"><span>${o}</span></label>`).join('')}<div class="qexp"></div></fieldset>`).join('')+'<div class="qactions"><button class="btn primary" type="submit">ตรวจคำตอบ</button><button class="btn" type="button" id="quizReset">ทำใหม่</button></div><div id="quizResult" class="result" aria-live="polite"></div>';
+quizForm.addEventListener('submit',e=>{
+ e.preventDefault();
+ let score=0;
+ QUIZ.forEach((it,i)=>{
+  const fs=quizForm.querySelector(`fieldset[data-i="${i}"]`);
+  const ch=quizForm.querySelector(`input[name="q${i}"]:checked`);
+  const ok=!!ch&&+ch.value===it.a;
+  if(ok)score++;
+  fs.classList.remove('right','wrong');
+  fs.classList.add(ok?'right':'wrong');
+  fs.querySelector('.qexp').textContent=(ok?'ถูกต้อง! ':(ch?'ยังไม่ถูก ':'ยังไม่ได้ตอบ '))+it.e;
+ });
+ const r=$('quizResult');
+ const msg=score===QUIZ.length?'ยอดเยี่ยมมาก! เข้าใจเรื่องพีระมิดครบทุกข้อ 🎉':(score>=3?'ดีมาก! ทบทวนข้อที่ยังไม่ถูกอีกนิดก็เต็มแล้ว 👍':'ไม่เป็นไร ลองกลับไปสำรวจโมเดล 3D แล้วทำใหม่อีกครั้ง 💪');
+ r.textContent=`ได้ ${score} จาก ${QUIZ.length} คะแนน — ${msg}`;
+ r.classList.add('show');
+});
+quizForm.addEventListener('click',e=>{
+ if(e.target.id==='quizReset'){
+  quizForm.reset();
+  quizForm.querySelectorAll('fieldset').forEach(f=>f.classList.remove('right','wrong'));
+  const r=$('quizResult');r.textContent='';r.classList.remove('show');
+ }
+});
+
+let handLandmarker=null,stream=null,anim=null,gameActive=false,roundTimer=null,roundStart=0,rounds=[],wasPinching=false,score=0,modelLoading=false;
+const video=$('video'),overlay=$('poseCanvas'),octx=overlay.getContext('2d');
+let targets=[],targetNumber=1,handPoint=null,feedbackText='',feedbackUntil=0;
+function newTarget(){return {n:1+Math.floor(Math.random()*9),x:.12+Math.random()*.76,y:.2+Math.random()*.65,r:.075};}
+function resetTargets(){targets=Array.from({length:6},()=>newTarget());targetNumber=1+Math.floor(Math.random()*9);feedbackText='';}
+async function loadHands(){
+ if(handLandmarker)return true;
+ if(modelLoading)return false;
+ modelLoading=true;
+ $('gameStatus').textContent='สถานะ: กำลังโหลดระบบตรวจจับมือ…';
+ try{
+  const mod=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');
+  const vision=await mod.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  handLandmarker=await mod.HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numHands:2});
+  return true;
+ }catch(err){
+  console.error(err);
+  $('gameStatus').textContent='โหลดตัวตรวจจับมือไม่สำเร็จ โปรดตรวจอินเทอร์เน็ตแล้วลองใหม่';
+  return false;
+ }finally{modelLoading=false;}
+}
+$('cameraBtn').addEventListener('click',async()=>{
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('gameStatus').textContent='เบราว์เซอร์นี้ไม่รองรับกล้อง';return;}
+ try{
+  $('cameraBtn').disabled=true;
+  $('gameStatus').textContent='สถานะ: กำลังขออนุญาตกล้อง…';
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+  video.srcObject=stream;
+  await video.play();
+  $('cameraPlaceholder').classList.add('hidden');
+  const ok=await loadHands();
+  if(!ok){stopCamera();$('gameStatus').textContent='โหลดตัวตรวจจับมือไม่สำเร็จ โปรดตรวจอินเทอร์เน็ตแล้วลองใหม่';return;}
+  $('roundBtn').disabled=false;
+  $('stopBtn').disabled=false;
+  $('gameStatus').textContent='สถานะ: พร้อมแล้ว กด “เริ่มเกม” เพื่อจับตัวเลข';
+  startLoop();
+ }catch(err){
+  console.error(err);
+  $('gameStatus').textContent='เปิดกล้องไม่ได้ โปรดอนุญาตการใช้กล้อง และเปิดไฟล์ผ่าน localhost หรือ HTTPS';
+  $('cameraBtn').disabled=false;
+ }
+});
+function syncOverlay(){
+ const r=overlay.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);
+ if(r.width<2)return false;
+ const w=Math.floor(r.width*d),h=Math.floor(r.height*d);
+ if(overlay.width!==w||overlay.height!==h){overlay.width=w;overlay.height=h;}
+ return true;
+}
+function startLoop(){if(!anim)anim=requestAnimationFrame(gameLoop);}
+function gameLoop(){
+ anim=null;
+ if(!stream)return;
+ if(!syncOverlay()||video.readyState<2||!handLandmarker){anim=requestAnimationFrame(gameLoop);return;}
+ const w=overlay.width,h=overlay.height;
+ octx.clearRect(0,0,w,h);
+ let result=null;
+ try{result=handLandmarker.detectForVideo(video,performance.now());}catch(e){result=null;}
+ handPoint=null;
+ let best=null;
+ if(result&&result.landmarks&&result.landmarks.length){
+  for(const lm of result.landmarks){
+   const thumb=lm[4],index=lm[8],dist=Math.hypot(thumb.x-index.x,thumb.y-index.y);
+   const p={x:(1-(thumb.x+index.x)/2)*w,y:((thumb.y+index.y)/2)*h,pinch:dist<.065,dist};
+   if(!best||p.dist<best.dist)best=p;
+   octx.strokeStyle='#58f2c4';octx.fillStyle='#ffbf69';octx.lineWidth=3;
+   const links=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]];
+   for(const [a,b] of links){octx.beginPath();octx.moveTo((1-lm[a].x)*w,lm[a].y*h);octx.lineTo((1-lm[b].x)*w,lm[b].y*h);octx.stroke();}
+   for(const i of [4,8]){octx.beginPath();octx.arc((1-lm[i].x)*w,lm[i].y*h,7,0,Math.PI*2);octx.fill();}
+  }
+ }
+ handPoint=best;
+ if(gameActive&&best){
+  if(best.pinch&&!wasPinching){
+   const nx=best.x/w,ny=best.y/h;
+   let hit=-1;
+   for(let i=0;i<targets.length;i++){const t=targets[i];if(Math.hypot(nx-t.x,ny-t.y)<t.r+.035){hit=i;break;}}
+   if(hit>=0){
+    if(targets[hit].n===targetNumber){
+     score++;
+     $('liveCount').textContent=score;
+     feedbackText='เก่งมาก! +1 คะแนน';
+     feedbackUntil=Date.now()+800;
+     targets[hit]=newTarget();
+     targetNumber=1+Math.floor(Math.random()*9);
+    }else{
+     feedbackText='ยังไม่ใช่เลข '+targetNumber;
+     feedbackUntil=Date.now()+800;
+    }
+   }
+  }
+  wasPinching=best.pinch;
+ }else if(!best){wasPinching=false;}
+ if(gameActive){
+  octx.fillStyle='rgba(17,29,52,.78)';
+  octx.fillRect(8,8,w-16,Math.max(42,h*.13));
+  octx.fillStyle='#fff';
+  octx.font=`bold ${Math.max(16,w*.035)}px Tahoma`;
+  octx.fillText('จับเลข: '+targetNumber,20,Math.max(30,h*.065));
+  octx.font=`${Math.max(12,w*.023)}px Tahoma`;
+  octx.fillText('จีบนิ้วโป้ง + นิ้วชี้ บนวงกลมเลขเป้าหมาย',20,Math.max(48,h*.105));
+  for(const t of targets){
+   const x=t.x*w,y=t.y*h,r=t.r*Math.min(w,h);
+   octx.beginPath();octx.arc(x,y,r,0,Math.PI*2);
+   octx.fillStyle=t.n===targetNumber?'#ffbf69':'#dce8ff';octx.fill();
+   octx.lineWidth=4;octx.strokeStyle=t.n===targetNumber?'#ff8a35':'#7690c7';octx.stroke();
+   octx.fillStyle='#18304b';
+   octx.font=`bold ${Math.max(18,r*.9)}px Tahoma`;
+   octx.textAlign='center';octx.textBaseline='middle';
+   octx.fillText(t.n,x,y);
+   octx.textAlign='start';octx.textBaseline='alphabetic';
+  }
+  if(handPoint){
+   octx.beginPath();octx.arc(handPoint.x,handPoint.y,12,0,Math.PI*2);
+   octx.fillStyle=handPoint.pinch?'#54f0c2':'#f47d9b';octx.fill();
+   octx.strokeStyle='white';octx.lineWidth=3;octx.stroke();
+  }
+  if(Date.now()<feedbackUntil){
+   octx.fillStyle='#fff';
+   octx.font=`bold ${Math.max(18,w*.04)}px Tahoma`;
+   octx.textAlign='center';
+   octx.fillText(feedbackText,w/2,h*.92);
+   octx.textAlign='start';
+  }
+ }
+ anim=requestAnimationFrame(gameLoop);
+}
+function stopCamera(){
+ gameActive=false;
+ if(roundTimer)clearInterval(roundTimer);
+ roundTimer=null;
+ if(anim)cancelAnimationFrame(anim);
+ anim=null;
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+ stream=null;
+ video.srcObject=null;
+ $('cameraPlaceholder').classList.remove('hidden');
+ $('cameraBtn').disabled=false;
+ $('roundBtn').disabled=true;
+ $('roundBtn').textContent='เริ่มเกม 20 วินาที';
+ $('stopBtn').disabled=true;
+ $('gameStatus').textContent='สถานะ: ปิดกล้องแล้ว';
+ octx.clearRect(0,0,overlay.width,overlay.height);
+}
+$('stopBtn').addEventListener('click',stopCamera);
+$('roundBtn').addEventListener('click',()=>{
+ if(gameActive){finishRound();return;}
+ if(!stream||!handLandmarker)return;
+ gameActive=true;score=0;wasPinching=false;roundStart=Date.now();
+ resetTargets();
+ $('liveCount').textContent='0';
+ $('timeLeft').textContent='20';
+ $('roundBtn').textContent='จบรอบและบันทึก';
+ $('roundBtn').disabled=false;
+ $('gameStatus').textContent='สถานะ: กำลังเล่น — จีบนิ้วจับวงกลมเลขให้ตรงกับโจทย์';
+ roundTimer=setInterval(()=>{
+  const left=Math.max(0,20-Math.floor((Date.now()-roundStart)/1000));
+  $('timeLeft').textContent=left;
+  if(left<=0)finishRound();
+ },200);
+ startLoop();
+});
+function finishRound(){
+ if(!gameActive)return;
+ gameActive=false;
+ clearInterval(roundTimer);
+ roundTimer=null;
+ const seconds=Math.min(20,Math.max(1,Math.round((Date.now()-roundStart)/1000)));
+ rounds.push({count:score,seconds});
+ renderRounds();
+ $('roundBtn').textContent='เริ่มเกม 20 วินาที';
+ $('timeLeft').textContent='0';
+ $('gameStatus').textContent=`บันทึกแล้ว: รอบที่ ${rounds.length} จับเลขถูกได้ ${score} คะแนน`;
+ wasPinching=false;
+}
+function renderRounds(){
+ const body=$('roundRows');
+ body.innerHTML='';
+ if(!rounds.length)body.innerHTML='<tr><td colspan="3">ยังไม่มีข้อมูล — เริ่มเล่นเพื่อเก็บข้อมูล</td></tr>';
+ rounds.forEach((r,i)=>{
+  const tr=document.createElement('tr');
+  [i+1,r.count,r.seconds].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+  body.appendChild(tr);
+ });
+ $('roundCount').textContent=rounds.length;
+ const a=rounds.map(r=>r.count);
+ if(!a.length){
+  $('mean').textContent='—';$('median').textContent='—';$('range').textContent='—';
+  $('statsExplain').textContent='เมื่อมีข้อมูลแล้ว ระบบจะคำนวณค่าเฉลี่ย มัธยฐาน และพิสัยให้โดยอัตโนมัติ';
+  return;
+ }
+ const sorted=[...a].sort((x,y)=>x-y),sum=a.reduce((x,y)=>x+y,0),mean=sum/a.length,mid=Math.floor(sorted.length/2);
+ const median=sorted.length%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2;
+ const range=sorted[sorted.length-1]-sorted[0];
+ $('mean').textContent=mean.toFixed(2);
+ $('median').textContent=median;
+ $('range').textContent=range;
+ $('statsExplain').textContent=`ค่าเฉลี่ย = ผลรวม ${sum} ÷ ${a.length} รอบ = ${mean.toFixed(2)} คะแนน • มัธยฐาน = ${median} คะแนน (ค่ากลางของข้อมูลที่เรียงแล้ว) • พิสัย = ${sorted[sorted.length-1]} − ${sorted[0]} = ${range} คะแนน`;
+}
+$('demoBtn').addEventListener('click',()=>{
+ if(gameActive)finishRound();
+ rounds=[{count:8,seconds:20},{count:10,seconds:20},{count:7,seconds:20},{count:9,seconds:20},{count:11,seconds:20}];
+ renderRounds();
+ $('gameStatus').textContent='แสดงข้อมูลตัวอย่างแล้ว — ลองคำนวณและเปรียบเทียบกับผลจริง';
+});
+$('clearBtn').addEventListener('click',()=>{
+ if(gameActive)finishRound();
+ rounds=[];
+ renderRounds();
+ $('gameStatus').textContent='ล้างข้อมูลแล้ว พร้อมทดลองใหม่';
+});
+$('csvBtn').addEventListener('click',()=>{
+ if(!rounds.length){$('gameStatus').textContent='ยังไม่มีข้อมูลให้ดาวน์โหลด';return;}
+ const csv='รอบ,จำนวนครั้งที่จับเลขถูก,เวลา(วินาที)\n'+rounds.map((r,i)=>`${i+1},${r.count},${r.seconds}`).join('\n');
+ const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='pyramid-hand-number-game.csv';
+ document.body.appendChild(a);a.click();a.remove();
+ URL.revokeObjectURL(url);
+});
+
+setKind('square');
+resize();
+updateReadouts();
+updatePourUI();
+frameCamera(false);
+camera.position.set(12,9,14);
+let firstFrame=true;
+function tick(){
+ requestAnimationFrame(tick);
+ const dt=Math.min(clock.getDelta(),.05);
+ const k=1-Math.pow(.0009,dt);
+ state.bCur+=(state.b-state.bCur)*k;
+ state.HCur+=(state.H-state.HCur)*k;
+ if(Math.abs(state.b-state.bCur)<.0008)state.bCur=state.b;
+ if(Math.abs(state.H-state.HCur)<.0008)state.HCur=state.H;
+ const mixTarget=state.tab==='vol'?1:0;
+ state.volMix+=(mixTarget-state.volMix)*(1-Math.pow(.004,dt));
+ if(Math.abs(mixTarget-state.volMix)<.001)state.volMix=mixTarget;
+ stepPour(dt);
+ if(clock.elapsedTime<camGoal.until){
+  const kk=1-Math.pow(.02,dt);
+  controls.target.lerp(camGoal.target,kk);
+  if(camGoal.usePos)camera.position.lerp(camGoal.pos,kk);
+ }
+ controls.update();
+ applyShape();
+ scene.updateMatrixWorld();
+ camera.updateMatrixWorld();
+ updateHotspots();
+ renderer.render(scene,camera);
+ if(firstFrame){firstFrame=false;$('loader').classList.add('gone');}
+}
+window.__ready=true;
+tick();
+</script>
+</body>
+</html>
